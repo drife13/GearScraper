@@ -8,9 +8,6 @@ module.exports = class MGRSearch extends SiteSearch {
         super("https://www.musicgoround.com/products");
         this.paramGroups = paramGroups;
         this.selector = ".card-title";
-        this.doNotEncode = {
-            sortBy: true
-        };
     }
 
     createUrl(baseUrl) {

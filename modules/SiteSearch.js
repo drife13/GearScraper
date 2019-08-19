@@ -9,26 +9,34 @@ const proxyOptions = null;
 const resources = new jsdom.ResourceLoader();
 
 module.exports = class SiteSearch {
-    constructor(baseUrl) {
-        this.baseUrl = baseUrl;
-        this.selector = "Selector not set yet.";
-        this.results = [];
-        this.doNotEncode = {};
-    }
-
-    async searchResults() {
-        const that = this;
-        if (that.baseUrl) {
-            const url = that.createUrl(that.baseUrl);
-            await that.getData(url, that.selector, 20000).then(result => {
-                that.results = result;
-            });
-            that.results.forEach(r => console.log(r));
+    constructor() {
+        this.selectors = {
+            "https://www.guitarcenter.com/search": ".productTitle > a",
+            "https://www.musicgoround.com/products": ".card-title",
+            "https://reverb.com/marketplace": ".grid-card__title"
         }
     }
 
-    async getData(url, selector, timeout) {
-        const that = this;
+    GetSelector(url) {
+        for (var baseUrl in this.selectors) {
+            if (url.includes(baseUrl)) {
+                return this.selectors[baseUrl];
+            }
+        }
+        return "Selector not set.";
+    }
+
+    // async PerformSearch(url) {
+    //     const that = this;
+    //     const results = await that.GetSearchResults(url, , 100000).then(() => {
+    //         console.log("Finished " + url);
+    //     }).catch(() => console.log("Failed " + url));
+    //     return results;
+    // }
+
+    async GetSearchResults(url, timeout) {
+        const selector = this.GetSelector(url);
+
         const virtualConsole = new jsdom.VirtualConsole();
         virtualConsole.sendTo(console, {
             omitJSDOMErrors: true
@@ -41,47 +49,44 @@ module.exports = class SiteSearch {
         });
 
         const data = await new Promise((res, rej) => {
-            const started = (new Date()).getTime();
+            const started = Date.now();
 
             const timer = setInterval(() => {
                 const element = dom.window.document.querySelector(selector);
+                //console.log(Date.now() - started);
 
                 if (element && element.textContent) {
-                    const diff = ((new Date()).getTime() - started) / 1000;
+                    const diff = (Date.now() - started) / 1000;
                     const elements = dom.window.document.querySelectorAll(selector);
 
                     console.log("Time to load " + elements.length + " element(s): " + diff + "s");
 
                     let results = [];
                     for (let i = 0; i < elements.length; i++)
-                        results.push(that.getProductTitle(elements[i]));
+                        results.push(elements[i].textContent.trim());
 
                     res(results);
                     clearInterval(timer);
-                } else if (Date.now() - started > timeout) {
+                } else if (Date.now() - started < 0) { // > timeout
                     rej(["Timed out"]);
                     clearInterval(timer);
                 }
             }, 100);
-        });
+        }).catch(() => console.log("Timed out"));
 
         dom.window.close();
         return data;
     }
 
-    createUrl() { // paramGroups
-        throw new Error('You have to implement the method getUrl!');
-    }
+    // createUrl() { // paramGroups
+    //     throw new Error('You have to implement the method getUrl!');
+    // }
 
-    queryString(params) {
-        const that = this;
-        const esc = encodeURIComponent;
-        return Object.keys(params)
-            .map(k => esc(k) + '=' + (that.doNotEncode[k] ? params[k] : esc(params[k])))
-            .join('&');
-    }
-
-    getProductTitle(docElement) {
-        return docElement.textContent;
-    }
+    // queryString(params) {
+    //     const that = this;
+    //     const esc = encodeURIComponent;
+    //     return Object.keys(params)
+    //         .map(k => esc(k) + '=' + (that.doNotEncode[k] ? params[k] : esc(params[k])))
+    //         .join('&');
+    // }
 }

@@ -7,7 +7,7 @@ module.exports = class GCSearch extends SiteSearch {
     constructor(paramGroups) {
         super("https://www.guitarcenter.com/search");
         this.paramGroups = paramGroups;
-        this.selector = ".productTitle";
+        this.selector = ".productTitle > a";
     }
 
     createUrl(baseUrl) { // paramGroups
@@ -24,9 +24,5 @@ module.exports = class GCSearch extends SiteSearch {
 
         console.log("Guitar Center URL: " + gcUrl);
         return gcUrl;
-    }
-
-    getProductTitle(element) {
-        return element.querySelector('a').textContent;
     }
 }
